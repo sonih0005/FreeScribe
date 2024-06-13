@@ -16,7 +16,7 @@ const HomePage = (props) => {
     console.log('start recording')
     
     try {
-      const streamData = navigator.mediaDevices.getUserMedia({
+      const streamData =await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: false 
       })
@@ -25,12 +25,44 @@ const HomePage = (props) => {
       console.log(error.message)
       return
     }
+    setRecordingStatus('recording')
     //create new media recorder instance using the stream
     const media = new MediaRecorder(tempStream, {type: mimeType})
     mediaRecorder.current = media
 
     mediaRecorder.current.start()
+    let localAudioChunks = []
+    mediaRecorder.current.ondataavailable = (event) => {
+      if(typeof event.data === 'undefined') {return}
+      if(event.data.size === 0) {return}
+      localAudioChunks.push(event.data)
+    }
+    setAudioChunks(localAudioChunks);
+
   }
+
+  async function stopRecording () {
+    setRecordingStatus('inactive')
+    console.log('stop recording');
+
+    mediaRecorder.current.stop();
+    mediaRecorder.current.onstop = () => {
+      const audioBlob = new Blob(audioChunks, { type: mimeType})
+      setAudioStream(audioBlob)
+      setAudioChunks([])
+      setDuration(0)
+    }
+  }
+
+  useEffect(() => {
+    if(recordingStatus === 'inactive') {return}
+
+    const interval = setInterval(() => {
+      setDuration(curr => curr+1)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  })
 
 
   return (
@@ -42,9 +74,16 @@ const HomePage = (props) => {
         Record <span className="text-blue-400 px-[5px]">&rarr;</span>Transcibe
         <span className="text-blue-400 px-[5px]">&rarr;</span>Translate
       </h3>
-      <button className="flex specialBtn px-4 py-2 rounded-xl items-center text-base justify-between gap-4 mx-auto w-72 max-w-full my-4">
-        <p className="text-blue-400">Record</p>
-        <i className="fa-solid fa-microphone"></i>
+      <button 
+      onClick={recordingStatus === 'recording' ? stopRecording : startRecording}
+      className="flex specialBtn px-4 py-2 rounded-xl items-center text-base justify-between gap-4 mx-auto w-72 max-w-full my-4">
+        <p className="text-blue-400">{recordingStatus === 'inactive' ? 'Record' : `stop Recording`}</p>
+        <div className="flex items-center gap-2">
+          {duration !==0 && (
+            <p className="text-sm">{duration}s</p>
+          )}
+         <i className={"fa-solid fa-microphone duration-200" + (recordingStatus === 'recording' ? 'text-rose-300' : "")} ></i>
+        </div>
       </button>
       <p className="text-base ">
         Or &nbsp;

@@ -19,7 +19,7 @@ function App() {
       <section className="min-h-screen flex flex-col">
         <Header />
         {isAudioAvailable ? (
-          <FileDisplay file = {file} audioStream = {setAudioStream} handleAudioReset = {handleAudioReset} />
+          <FileDisplay file = {file} audioStream = {audioStream} handleAudioReset = {handleAudioReset} />
         ) : (<HomePage setFile ={setFile} setAudioStream= {setAudioStream}/>)}
       </section>
     </div>
